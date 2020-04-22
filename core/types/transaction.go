@@ -207,13 +207,6 @@ func (tx *Transaction) To() *common.Address {
 	to := *tx.data.Recipient
 	return &to
 }
-func (tx *Transaction) From() *common.Address {
-	if tx.data.Recipient == nil {
-		return nil
-	}
-	to := *tx.data.Recipient
-	return &to
-}
 
 // Hash hashes the RLP encoding of tx.
 // It uniquely identifies the transaction.

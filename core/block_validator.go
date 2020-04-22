@@ -19,7 +19,6 @@ package core
 import (
 	"fmt"
 "log"
-"math/big"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -69,7 +68,7 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 //linzhaojie blockValidate code
 	if len(transactions)>0{
 		for i:=0;i<len(transactions);i++{
-			msg, err := transactions[i].AsMessage(types.NewEIP155Signer(big.NewInt(37021)))
+			msg, err := transactions[i].AsMessage(types.NewEIP155Signer(v.config.ChainID))
 						if err != nil {
 							log.Fatal("getFromErr",err)
 						}
@@ -81,7 +80,7 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 		}
 	}
 
-	
+
 	if !v.bc.HasBlockAndState(block.ParentHash(), block.NumberU64()-1) {
 		if !v.bc.HasBlock(block.ParentHash(), block.NumberU64()-1) {
 			return consensus.ErrUnknownAncestor
