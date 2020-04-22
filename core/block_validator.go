@@ -65,6 +65,7 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 		return fmt.Errorf("transaction root hash mismatch: have %x, want %x", hash, header.TxHash)
 	}
 	transactions:=block.Transactions()
+
 //linzhaojie blockValidate code
 	if len(transactions)>0{
 		for i:=0;i<len(transactions);i++{
@@ -72,7 +73,7 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 						if err != nil {
 							log.Fatal("getFromErr",err)
 						}
-             if msg.Type()==0||msg.Type()==1{
+             if msg.Type()==1||msg.Type()==2{
                if msg.From()!=IsTheFates{
 				return fmt.Errorf("invalid txType‘s sender (remote: %d local: %d)", msg.From().Hex(), IsTheFates.Hex())
 			   }
