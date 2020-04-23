@@ -208,9 +208,6 @@ func (e *NoRewardEngine) VerifyHeaders(chain consensus.ChainReader, headers []*t
 	return e.inner.VerifyHeaders(chain, headers, seals)
 }
 
-func (e *NoRewardEngine) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
-	return e.inner.VerifyUncles(chain, block)
-}
 
 func (e *NoRewardEngine) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
 	return e.inner.VerifySeal(chain, header)
@@ -220,35 +217,31 @@ func (e *NoRewardEngine) Prepare(chain consensus.ChainReader, header *types.Head
 	return e.inner.Prepare(chain, header)
 }
 
-func (e *NoRewardEngine) accumulateRewards(config *params.ChainConfig, state *state.StateDB, header *types.Header, uncles []*types.Header) {
-	// Simply touch miner and uncle coinbase accounts
+func (e *NoRewardEngine) accumulateRewards(config *params.ChainConfig, state *state.StateDB, header *types.Header) {
 	reward := big.NewInt(0)
-	for _, uncle := range uncles {
-		state.AddBalance(uncle.Coinbase, reward)
-	}
 	state.AddBalance(header.Coinbase, reward)
 }
 
 func (e *NoRewardEngine) Finalize(chain consensus.ChainReader, header *types.Header, statedb *state.StateDB, txs []*types.Transaction,
-	uncles []*types.Header) {
+	) {
 	if e.rewardsOn {
-		e.inner.Finalize(chain, header, statedb, txs, uncles)
+		e.inner.Finalize(chain, header, statedb, txs)
 	} else {
-		e.accumulateRewards(chain.Config(), statedb, header, uncles)
+		e.accumulateRewards(chain.Config(), statedb, header)
 		header.Root = statedb.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 	}
 }
 
 func (e *NoRewardEngine) FinalizeAndAssemble(chain consensus.ChainReader, header *types.Header, statedb *state.StateDB, txs []*types.Transaction,
-	uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
+	 receipts []*types.Receipt) (*types.Block, error) {
 	if e.rewardsOn {
-		return e.inner.FinalizeAndAssemble(chain, header, statedb, txs, uncles, receipts)
+		return e.inner.FinalizeAndAssemble(chain, header, statedb, txs, receipts)
 	} else {
-		e.accumulateRewards(chain.Config(), statedb, header, uncles)
+		e.accumulateRewards(chain.Config(), statedb, header)
 		header.Root = statedb.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 
 		// Header seems complete, assemble into a block and return
-		return types.NewBlock(header, txs, uncles, receipts), nil
+		return types.NewBlock(header, txs, receipts), nil
 	}
 }
 
@@ -541,7 +534,7 @@ func (api *RetestethAPI) mineBlock() error {
 			}
 		}
 	}
-	block, err := api.engine.FinalizeAndAssemble(api.blockchain, header, statedb, txs, []*types.Header{}, receipts)
+	block, err := api.engine.FinalizeAndAssemble(api.blockchain, header, statedb, txs,receipts)
 	if err != nil {
 		return err
 	}
