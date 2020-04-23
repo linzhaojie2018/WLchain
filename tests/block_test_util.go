@@ -77,7 +77,6 @@ type btHeader struct {
 	ReceiptTrie      common.Hash
 	StateRoot        common.Hash
 	TransactionsTrie common.Hash
-	UncleHash        common.Hash
 	ExtraData        []byte
 	Difficulty       *big.Int
 	GasLimit         uint64
@@ -232,9 +231,6 @@ func validateHeader(h *btHeader, h2 *types.Header) error {
 	}
 	if h.StateRoot != h2.Root {
 		return fmt.Errorf("state hash: want: %x have: %x", h.StateRoot, h2.Root)
-	}
-	if h.UncleHash != h2.UncleHash {
-		return fmt.Errorf("uncle hash: want: %x have: %x", h.UncleHash, h2.UncleHash)
 	}
 	if !bytes.Equal(h.ExtraData, h2.Extra) {
 		return fmt.Errorf("extra data: want: %x have: %x", h.ExtraData, h2.Extra)
