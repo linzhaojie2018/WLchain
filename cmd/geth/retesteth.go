@@ -461,6 +461,7 @@ func (api *RetestethAPI) mineBlock() error {
 		Time:       timestamp,
 //linzhaojie header code
 		TheFates:   parent.TheFates(),
+		BaseTarget:  parent.BaseTarget(),
 	}
 	header.Coinbase = api.author
 	if api.engine != nil {

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -31,6 +30,7 @@ func (g Genesis) MarshalJSON() ([]byte, error) {
 		ParentHash common.Hash                                 `json:"parentHash"`
 //linzhaojie theFates code
 		TheFates   common.Address                              `json:"theFates"`
+		BaseTarget *math.HexOrDecimal256                        `json:"baseTarget" gencodec:"required"`
 	}
 	var enc Genesis
 	enc.Config = g.Config
@@ -52,6 +52,7 @@ func (g Genesis) MarshalJSON() ([]byte, error) {
 	enc.ParentHash = g.ParentHash
 	//linzhaojie theFates code
 	enc.TheFates=g.TheFates
+	enc.BaseTarget=(*math.HexOrDecimal256)(g.BaseTarget)
 	return json.Marshal(&enc)
 }
 
@@ -69,7 +70,9 @@ func (g *Genesis) UnmarshalJSON(input []byte) error {
 		Number     *math.HexOrDecimal64                        `json:"number"`
 		GasUsed    *math.HexOrDecimal64                        `json:"gasUsed"`
 		ParentHash *common.Hash                                `json:"parentHash"`
+//linzhaojie theFates code	
 		TheFates   *common.Address                              `json:"theFates"`
+		BaseTarget *math.HexOrDecimal256                       `json:"baseTarget" gencodec:"required"`
 	}
 	var dec Genesis
 	if err := json.Unmarshal(input, &dec); err != nil {
@@ -119,6 +122,9 @@ func (g *Genesis) UnmarshalJSON(input []byte) error {
 	}
 	if dec.TheFates != nil{
 		g.TheFates = *dec.TheFates
+	}
+	if dec.BaseTarget != nil{
+		g.BaseTarget= (*big.Int)(dec.BaseTarget)
 	}
 	return nil
 }

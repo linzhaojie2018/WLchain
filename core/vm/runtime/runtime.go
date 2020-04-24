@@ -46,7 +46,7 @@ type Config struct {
 	EVMConfig   vm.Config
 // //linzhaojie blockHeader code
     TheFates    common.Address
-
+    BaseTarget  *big.Int
 	State     *state.StateDB
 	GetHashFn func(n uint64) common.Hash
 }

@@ -63,6 +63,7 @@ type Genesis struct {
 	ParentHash common.Hash `json:"parentHash"`
 //linzhaojie TheFates code
 	TheFates   common.Address `json:"theFates"`
+	BaseTarget *big.Int    `json:"baseTarget" gencodec:"required"`
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
@@ -280,6 +281,7 @@ func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 		MixDigest:  g.Mixhash,
 		Coinbase:   g.Coinbase,
 		TheFates:   g.TheFates,
+		BaseTarget: g.BaseTarget,
 		Root:       root,
 	}
 	if g.GasLimit == 0 {

@@ -179,6 +179,7 @@ func runCmd(ctx *cli.Context) error {
 		Time:        new(big.Int).SetUint64(genesisConfig.Timestamp),
 		Coinbase:    genesisConfig.Coinbase,
 		TheFates:    genesisConfig.TheFates,
+		BaseTarget:   genesisConfig.BaseTarget,
 		BlockNumber: new(big.Int).SetUint64(genesisConfig.Number),
 		EVMConfig: vm.Config{
 			Tracer:         tracer,

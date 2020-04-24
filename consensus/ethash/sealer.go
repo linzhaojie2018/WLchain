@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"fmt"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -33,6 +34,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/constants"
+	// "github.com/ethereum/go-ethereum/core/hashid"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -68,6 +71,7 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 	abort := make(chan struct{})
 
 	ethash.lock.Lock()
+
 	threads := ethash.threads
 	if ethash.rand == nil {
 		seed, err := crand.Int(crand.Reader, big.NewInt(math.MaxInt64))
@@ -92,6 +96,8 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 		pend   sync.WaitGroup
 		locals = make(chan *types.Block)
 	)
+	parent:=chain.GetBlock(block.ParentHash(),block.Number().Uint64()-1)
+	calculateBaseTarget(chain,block,parent)
 	for i := 0; i < threads; i++ {
 		pend.Add(1)
 		go func(id int, nonce uint64) {
@@ -135,6 +141,7 @@ func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan s
 		header  = block.Header()
 		hash    = ethash.SealHash(header).Bytes()
 		target  = new(big.Int).Div(two256, header.Difficulty)
+
 		number  = header.Number.Uint64()
 		dataset = ethash.dataset(number, false)
 	)
@@ -145,6 +152,7 @@ func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan s
 	)
 	logger := log.New("miner", id)
 	logger.Trace("Started ethash search for new nonces", "seed", seed)
+
 search:
 	for {
 		select {
@@ -368,4 +376,73 @@ func (ethash *Ethash) remote(notify []string, noverify bool) {
 			return
 		}
 	}
+}
+
+func calculateBaseTarget(chain consensus.ChainReader,block *types.Block,parentBlock *types.Block) error {
+	// if block.Hash().Hex() == constants.GENESIS_BLOCK_HASH {
+	// 	block.SetBaseTarget(big.NewInt(constants.INITIAL_BASE_TARGET))
+	// 	fmt.Println(big.NewInt(constants.INITIAL_BASE_TARGET))
+	// 	// block.setDifficulty(*big.NewInt(0))
+	// }else 
+	
+	if block.Number().Uint64()<24{
+		block.SetBaseTarget(big.NewInt(constants.INITIAL_BASE_TARGET))
+		// block.setDifficulty(*parentBlock.getDifficulty())
+	}else {
+		 itBlock := parentBlock;
+		 avgBaseTarget := itBlock.BaseTarget()
+		 var blockCounter int64 = 1
+		 //计算平均出块难度
+		 for i:=0; i<24; i++  {
+			parentNumber := itBlock.Number()
+
+			//获取前一个块
+			itBlock = chain.GetBlock(itBlock.ParentHash(),itBlock.Number().Uint64()-1)
+			if itBlock == nil {
+				return errors.New(fmt.Sprintf(
+					"ParentBlock does no longer exist for block height %d",parentNumber))
+			}
+			blockCounter++
+			avgBaseTarget = avgBaseTarget.Mul(avgBaseTarget,big.NewInt(blockCounter)).
+							Add(avgBaseTarget,itBlock.BaseTarget()).
+							Div(avgBaseTarget,big.NewInt(blockCounter + 1))
+		 }
+
+			//当前出块时间-前第24个块的出块时间
+		 difTime := block.Time() - itBlock.Time()
+		//24个块的间隔时间sec
+		 targetTimespan := 24 * constants.RECIPIENT_ASSIGNMENT_WAIT_TIME *60
+
+		 //修正间隔时间
+		if difTime < uint64(targetTimespan) / 2 {
+			difTime = uint64(targetTimespan) / 2
+		}
+		if difTime > uint64(targetTimespan) * 2{
+			difTime = uint64(targetTimespan) * 2
+		}
+
+		//获取上一个块的basetarget
+		curBaseTarget:=parentBlock.BaseTarget()
+		//计算最新basetarget
+		newBaseTarget:=avgBaseTarget.Mul(avgBaseTarget,new(big.Int).SetUint64(difTime)).
+						Div(avgBaseTarget,big.NewInt(int64(targetTimespan))).Int64()
+		if newBaseTarget < 0 || newBaseTarget > constants.MAX_BASE_TARGET{
+			newBaseTarget = constants.MAX_BASE_TARGET
+		}
+		if newBaseTarget == 0 {
+			newBaseTarget = 1
+		}
+
+		if newBaseTarget > curBaseTarget.Int64()*8/10{
+			newBaseTarget = curBaseTarget.Int64()*8/10
+		}
+		if newBaseTarget> curBaseTarget.Int64()*12 / 10{
+			newBaseTarget = curBaseTarget.Int64()*12 / 10
+		}
+		block.SetBaseTarget(big.NewInt(newBaseTarget))
+		// tn:=big.NewInt(0).Div(constants.TWO64,big.NewInt(newBaseTarget))
+		// block.setDifficulty(*big.NewInt(0).Add(parentBlock.getDifficulty(),tn))
+		
+	}
+	return nil
 }

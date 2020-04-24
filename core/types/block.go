@@ -25,10 +25,13 @@ import (
 	"reflect"
 	"sync/atomic"
 	"time"
+	"crypto/sha256"
+	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
+	// "github.com/ethereum/go-ethereum/core/hashid"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -305,6 +308,7 @@ func (b *Block) Bloom() Bloom             { return b.header.Bloom }
 func (b *Block) Coinbase() common.Address { return b.header.Coinbase }
 //linzhaojie header code
 func (b *Block) TheFates() common.Address { return b.header.TheFates }
+func (b *Block) BaseTarget() *big.Int { return b.header.BaseTarget }
 
 func (b *Block) Root() common.Hash        { return b.header.Root }
 func (b *Block) ParentHash() common.Hash  { return b.header.ParentHash }
@@ -376,3 +380,38 @@ func (b *Block) Hash() common.Hash {
 }
 
 type Blocks []*Block
+
+//linzhaojie BHD code
+//生成PID
+// func (b *Block)SetGenerator(secretPhrase string) {
+// 	b.Generator = *hashid.GeneratePIDForSP(secretPhrase)
+// }
+
+func (b *Block) SetBaseTarget(ini *big.Int) {
+	b.header.BaseTarget =ini
+}
+
+
+func (b *Block) SetDifficulty(d big.Int) {
+	b.header.Difficulty = &d
+}
+
+func (b *Block) GetDifficulty() *big.Int {
+	return nil
+}
+
+func GetBlock(parent string) *Block {
+	return nil
+}
+
+////生成GenerationSignature
+func GetGenerationSignature(lastGenSig []byte,lastGenerator *big.Int)string {
+	//shabal256:=shabal.New()
+	//shabal256.Write(lastGenSig)
+	//fmt.Println("---> ",lastGenerator.Bytes())
+	//v:=shabal256.Sum(lastGenerator.Bytes())
+	S256:=sha256.New()
+	S256.Write(lastGenSig)
+	v:=S256.Sum(lastGenerator.Bytes())
+	return hex.EncodeToString(v)
+}

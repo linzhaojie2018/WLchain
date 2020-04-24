@@ -998,7 +998,7 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 //linzhaojie blockheader code
 		"theFates":         head.TheFates,
 		"plotterId":        (*hexutil.Big)(head.PlotterId),
-		"baseTarget":       (*hexutil.Big)(head.BaseTarget),
+		"baseTarget":       head.BaseTarget.Uint64(),
 		"generationSignature":head.GenerationSignature,
 		"generatorPublicKey":head.GeneratorPublicKey,
 		"blockSignature":    head.BlockSignature,
